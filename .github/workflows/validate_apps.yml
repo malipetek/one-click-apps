@@ -11,11 +11,39 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [16.x]
+
     steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-node@v1
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: 14
-      - run: npm ci && npm run validate_apps && npm run formatter
+          node-version: ${{ matrix.node-version }}
+
+      - name: Cache .pnpm-store
+        uses: actions/cache@v4
+        with:
+          path: ~/.pnpm-store
+          key: ${{ runner.os }}-node${{ matrix.node-version }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-node${{ matrix.node-version }}-
+
+      - name: Install pnpm
+        run: npm install -g pnpm@8
+
+      - name: Install dependencies with pnpm
+        run: pnpm install
+
+      - name: Validate code
+        run: pnpm run validate
         env:
-          GITHUB_PERSONAL_TOKEN: ${{secrets.GITHUB_PERSONAL_TOKEN}}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Format code
+        run: pnpm run format
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
