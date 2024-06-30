@@ -1,0 +1,48 @@
+captainVersion: 4
+services:
+  $$cap_appname-postgres:
+    image: ankane/pgvector
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydb
+    volumes:
+      - $$cap_appname-db-data:/var/lib/postgresql/data
+    caproverExtra:
+      notExposeAsWebApp: 'true'
+
+  $$cap_appname:
+    restartPolicy: never
+    environment:
+      DATABASE_URL: postgres://myuser:mypassword@postgres:5432/mydb
+      FLOWISE_USERNAME: $$cap_flowise_username
+      FLOWISE_PASSWORD: $$cap_flowise_password
+    caproverExtra:
+      containerHttpPort: 3000
+      dockerfileLines:
+        - FROM flowiseai/flowise:$$cap_flowise_version
+        - CMD /bin/sh -c "sleep 3; flowise start"
+    volumes:
+      - $$cap_appname-db-data:/root/.flowise
+
+caproverOneClickApp:
+  variables:
+    - id: $$cap_flowise_version
+      label: Flowise version
+      defaultValue: '1.4.3'
+      description: Checkout their docker page for the valid tags https://hub.docker.com/r/flowiseai/flowise/tags
+      validRegex: /^([^\s^\/])+$/
+    - id: $$cap_flowise_username
+      label: Flowise Username
+      description: 'Your Flowise username'
+    - id: $$cap_flowise_password
+      label: Flowise Password
+      description: 'Your Flowise password'
+  instructions:
+    start: >-
+      Flowise is a powerful AI tool. Before you start, make sure you have all your environment variables ready to input.
+    end: >-
+      Your Flowise app is now deployed and running!
+  displayName: 'Flowise'
+  description: 'Flowise AI Tool'
+  documentation: 'https://github.com/FlowiseAI/Flowise'
