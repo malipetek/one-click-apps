@@ -2,6 +2,8 @@ import path from 'path';
 import yaml from 'yaml';
 import { strOptions } from 'yaml/types';
 import fs from 'fs-extra';
+import * as url from 'url';
+const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
 /*jshint esversion: 6 */
 strOptions.fold.lineWidth = 0;

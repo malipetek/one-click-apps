@@ -1,6 +1,8 @@
 import path from 'path';
 import yaml from 'yaml';
 import fs from 'fs-extra';
+import * as url from 'url';
+const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
 /*jshint esversion: 6 */
 

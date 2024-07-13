@@ -2,8 +2,10 @@ import path from 'path';
 import yaml from 'yaml';
 import fs from 'fs-extra';
 
-/*jshint esversion: 6 */
+import * as url from 'url';
+const __dirname = url.fileURLToPath(new URL('.', import.meta.url));
 
+/*jshint esversion: 6 */
 const pathOfPublic = path.join(__dirname, '..', `public`);
 const pathOfDist = path.join(__dirname, '..', `dist`);
 const pathOfDistV2 = path.join(pathOfDist, 'v2');
