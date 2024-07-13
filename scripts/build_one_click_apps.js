@@ -1,7 +1,8 @@
+import path from 'path';
+import yaml from 'yaml';
+import fs from 'fs-extra';
+
 /*jshint esversion: 6 */
-const path = require('path');
-const yaml = require('yaml');
-const fs = require('fs-extra');
 
 // Next, for V4:
 // ============================================================================
@@ -33,7 +34,7 @@ function createAppList(appsList, pathOfApps) {
     const apps = appsList.filter(v => v.includes('.json'));
     const appDetails = [];
 
-    for (var i = 0; i < apps.length; i++) {
+    for (let i = 0; i < apps.length; i++) {
         const contentString = fs.readFileSync(path.join(pathOfApps, apps[i]));
         const content = JSON.parse(contentString);
         const captainVersion = (content.captainVersion + '');
@@ -115,13 +116,13 @@ function convertV2toV4(v2String) {
 
 function buildDist() {
     return Promise.resolve()
-        .then(function () {
+        .then(() => {
             if (!fs.existsSync(pathOfSourceDirectoryApps)) {
                 return [];
             }
             return fs.readdir(pathOfSourceDirectoryApps);
         })
-        .then(function (appsFileNames) { // [ app1.json app2.json .... ]
+        .then((appsFileNames) => { // [ app1.json app2.json .... ]
 
             if (appsFileNames.length === 0) {
                 return;
@@ -159,10 +160,10 @@ function buildDist() {
 
 
 Promise.resolve()
-    .then(function () {
+    .then(() => {
         return buildDist();
     })
-    .catch(function (err) {
+    .catch((err) => {
         console.error(err);
         process.exit(127);
     });

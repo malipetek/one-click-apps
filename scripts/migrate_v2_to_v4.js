@@ -1,9 +1,10 @@
+import path from 'path';
+import yaml from 'yaml';
+import { strOptions } from 'yaml/types';
+import fs from 'fs-extra';
+
 /*jshint esversion: 6 */
-const path = require('path');
-const yaml = require('yaml');
-const types = require('yaml/types');
-const fs = require('fs-extra');
-types.strOptions.fold.lineWidth = 0;
+strOptions.fold.lineWidth = 0;
 
 // Next, for V4:
 // ============================================================================
@@ -29,8 +30,6 @@ const pathOfDistV4 = path.join(pathOfDist, 'v4');
 const pathOfSourceDirectoryV2 = path.join(pathOfPublic, 'v2');
 const pathOfSourceDirectoryAppsV2 = path.join(pathOfSourceDirectoryV2, 'apps');
 const pathOfSourceDirectoryLogosV2 = path.join(pathOfSourceDirectoryV2, 'logos');
-
-
 
 function convertV2toV4(v2String) {
     const parsed = JSON.parse(v2String);
@@ -75,37 +74,30 @@ function convertV2toV4(v2String) {
         service.notExposeAsWebApp = undefined;
     });
 
-
     return JSON.parse(JSON.stringify(parsed));
 }
 
+async function buildDist() {
+    const appsFileNames = await fs.readdir(pathOfSourceDirectoryAppsV2);
 
-function buildDist() {
-    return fs.readdir(pathOfSourceDirectoryAppsV2)
-        .then(function (appsFileNames) { // [ app1.json app2.json .... ]
+    appsFileNames.forEach(async appFileName => {
+        const pathOfAppFileInSource = path.join(pathOfSourceDirectoryAppsV2, appFileName);
 
-                appsFileNames.forEach(appFileName => {
-                        const pathOfAppFileInSource = path.join(pathOfSourceDirectoryAppsV2, appFileName);
+        //v4
+        const pathOfSourceDirectoryV4 = path.join(pathOfPublic, 'v4');
+        const contentString = await fs.readFile(pathOfAppFileInSource);
 
-                        //v4
-                        const pathOfSourceDirectoryV4 = path.join(pathOfPublic, 'v4');
-                        const contentString = fs.readFileSync(pathOfAppFileInSource);
+        await fs.outputFile(path.join(pathOfSourceDirectoryV4, `apps`, appFileName.split('.')[0] + '.yml'), yaml.stringify(convertV2toV4(contentString)));
+        await fs.move(path.join(pathOfSourceDirectoryV2, `logos`, appFileName.split('.')[0] + '.png'), path.join(pathOfSourceDirectoryV4, `logos`, appFileName.split('.')[0] + '.png'));
+        await fs.remove(path.join(pathOfSourceDirectoryV2, `apps`, appFileName.split('.')[0] + '.json'));
+    });
+}
 
-                        fs.outputFileSync(path.join(pathOfSourceDirectoryV4, `apps`, appFileName.split('.')[0] + '.yml'), yaml.stringify(convertV2toV4(contentString)));
-                        fs.moveSync(path.join(pathOfSourceDirectoryV2, `logos`, appFileName.split('.')[0] + '.png'),
-                            path.join(pathOfSourceDirectoryV4, `logos`, appFileName.split('.')[0] + '.png'));
-                        fs.removeSync(path.join(pathOfSourceDirectoryV2, `apps`, appFileName.split('.')[0] + '.json'));
-                        });
-
-                });
-        }
-
-
-    Promise.resolve()
-        .then(function () {
-            return buildDist();
-        })
-        .catch(function (err) {
-            console.error(err);
-            process.exit(127);
-        });
+(async () => {
+    try {
+        await buildDist();
+    } catch (err) {
+        console.error(err);
+        process.exit(127);
+    }
+})();

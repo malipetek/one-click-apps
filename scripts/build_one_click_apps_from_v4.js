@@ -1,16 +1,14 @@
+import path from 'path';
+import yaml from 'yaml';
+import fs from 'fs-extra';
+
 /*jshint esversion: 6 */
-const path = require('path');
-const yaml = require('yaml');
-const fs = require('fs-extra');
 
 const pathOfPublic = path.join(__dirname, '..', `public`);
-
 const pathOfDist = path.join(__dirname, '..', `dist`);
-
 const pathOfDistV2 = path.join(pathOfDist, 'v2');
 const pathOfDistV3 = path.join(pathOfDist, 'v3');
 const pathOfDistV4 = path.join(pathOfDist, 'v4');
-
 const pathOfSourceDirectory = path.join(pathOfPublic, 'v4');
 const pathOfSourceDirectoryApps = path.join(pathOfSourceDirectory, 'apps');
 const pathOfSourceDirectoryLogos = path.join(pathOfSourceDirectory, 'logos');
@@ -62,7 +60,6 @@ function createAppList(appsFileNames, pathOfApps) {
         } else {
             throw new Error('Unknown captain-version: ' + captainVersion);
         }
-
     }
 
     return {
@@ -87,7 +84,6 @@ function convertV4toV2(v4String) {
     parsed.services = undefined;
 
     parsed.captainVersion = 2;
-
 
     moveProperty('variables');
     moveProperty('instructions');
@@ -120,76 +116,67 @@ function convertV4toV2(v4String) {
     return parsed;
 }
 
+async function buildDist() {
+    const appsFileNames = await fs.readdir(pathOfSourceDirectoryApps);
 
-function buildDist() {
-    return fs.readdir(pathOfSourceDirectoryApps)
-        .then(function (appsFileNames) { // [ app1.yml app2.yml .... ]
+    appsFileNames.forEach(appFileName => {
+        console.log('Building dist for ' + appFileName);
 
-            appsFileNames.forEach(appFileName => {
+        const pathOfAppFileInSource = path.join(pathOfSourceDirectoryApps, appFileName);
+        const contentParsed = yaml.parse(fs.readFileSync(pathOfAppFileInSource, 'utf-8'));
 
-                console.log('Building dist for ' + appFileName);
+        //v4
+        fs.outputJsonSync(path.join(pathOfDistV4, `apps`, appFileName.split('.')[0]), contentParsed);
 
-                const pathOfAppFileInSource = path.join(pathOfSourceDirectoryApps, appFileName);
-                const contentParsed = yaml.parse(fs.readFileSync(pathOfAppFileInSource, 'utf-8'));
+        //v3
+        fs.outputJsonSync(path.join(pathOfDistV3, `apps`, appFileName.split('.')[0]), convertV4toV2(JSON.stringify(contentParsed)));
 
-                //v4
-                fs.outputJsonSync(path.join(pathOfDistV4, `apps`, appFileName.split('.')[0]), contentParsed);
+        //v2
+        fs.outputJsonSync(path.join(pathOfDistV2, `apps`, appFileName.split('.')[0] + '.json'), convertV4toV2(JSON.stringify(contentParsed)));
+    });
 
-                //v3
-                fs.outputJsonSync(path.join(pathOfDistV3, `apps`, appFileName.split('.')[0]), convertV4toV2(JSON.stringify(contentParsed)));
+    fs.copySync(pathOfSourceDirectoryLogos, path.join(pathOfDistV2, `logos`));
+    fs.copySync(pathOfSourceDirectoryLogos, path.join(pathOfDistV3, `logos`));
+    fs.copySync(pathOfSourceDirectoryLogos, path.join(pathOfDistV4, `logos`));
 
-                //v2
-                fs.outputJsonSync(path.join(pathOfDistV2, `apps`, appFileName.split('.')[0] + '.json'), convertV4toV2(JSON.stringify(contentParsed)));
+    const allAppsList = createAppList(appsFileNames, pathOfSourceDirectoryApps);
+    const v3List = {
+        oneClickApps: allAppsList.appDetails
+    };
+
+    // Remove once we are fully on V4
+    if (fs.existsSync(path.join(pathOfDistV3, 'list'))) {
+        const v3ListExisting = fs.readFileSync(path.join(pathOfDistV3, 'list'), 'utf-8');
+        if (v3ListExisting && JSON.parse(v3ListExisting).oneClickApps) {
+            v3List.oneClickApps = [...v3List.oneClickApps, ...JSON.parse(v3ListExisting).oneClickApps];
+            const names = {};
+            const list = [];
+            v3List.oneClickApps.forEach(a => {
+                if (!names[a.name]) {
+                    list.push(a);
+                    names[a.name] = true;
+                }
+            });
+            v3List.oneClickApps = list.sort(function (a, b) {
+                return `${a.name}`.localeCompare(b.name);
             });
 
-            fs.copySync(pathOfSourceDirectoryLogos, path.join(pathOfDistV2, `logos`));
-            fs.copySync(pathOfSourceDirectoryLogos, path.join(pathOfDistV3, `logos`));
-            fs.copySync(pathOfSourceDirectoryLogos, path.join(pathOfDistV4, `logos`));
+            allAppsList.appList = list.map(l => l.name);
+            allAppsList.appDetails = v3List.oneClickApps;
+        }
+    }
 
-            const allAppsList = createAppList(appsFileNames, pathOfSourceDirectoryApps);
-            const v3List = {
-                oneClickApps: allAppsList.appDetails
-            };
-
-            // Remove once we are fully on V4
-            if (fs.existsSync(path.join(pathOfDistV3, 'list'))) {
-                const v3ListExisting = fs.readFileSync(path.join(pathOfDistV3, 'list'), 'utf-8');
-                if (v3ListExisting && JSON.parse(v3ListExisting).oneClickApps) {
-                    v3List.oneClickApps = [...v3List.oneClickApps, ...JSON.parse(v3ListExisting).oneClickApps];
-                    const names = {};
-                    const list = [];
-                    v3List.oneClickApps.forEach(a => {
-                        if (!names[a.name]) {
-                            list.push(a);
-                            names[a.name] = true;
-                        }
-                    });
-                    v3List.oneClickApps = list.sort(function (a, b) {
-                        return `${a.name}`.localeCompare(b.name);
-                    });
-
-                    allAppsList.appList = list.map(l => l.name);
-                    allAppsList.appDetails = v3List.oneClickApps;
-                }
-            }
-
-
-            fs.outputJsonSync(path.join(pathOfDistV2, 'autoGeneratedList.json'), allAppsList);
-            fs.outputJsonSync(path.join(pathOfDistV2, 'list'), v3List);
-            fs.outputJsonSync(path.join(pathOfDistV3, 'list'), v3List);
-            fs.outputJsonSync(path.join(pathOfDistV4, 'list'), v3List);
-        })
-        .then(function () {
-            return fs.copySync(path.join(pathOfPublic, 'CNAME'), path.join(pathOfDist, 'CNAME'));
-        });
+    fs.outputJsonSync(path.join(pathOfDistV2, 'autoGeneratedList.json'), allAppsList);
+    fs.outputJsonSync(path.join(pathOfDistV2, 'list'), v3List);
+    fs.outputJsonSync(path.join(pathOfDistV3, 'list'), v3List);
+    fs.outputJsonSync(path.join(pathOfDistV4, 'list'), v3List);
 }
 
-
-Promise.resolve()
-    .then(function () {
-        return buildDist();
-    })
-    .catch(function (err) {
+(async function () {
+    try {
+        await buildDist();
+    } catch (err) {
         console.error(err);
         process.exit(127);
-    });
+    }
+})();
