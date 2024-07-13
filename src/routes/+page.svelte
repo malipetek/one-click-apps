@@ -18,6 +18,7 @@
   }
   
   function _find(q) {
+    if(searchText == '') return filteredApps = {...apps};
     filteredApps = search(q, Object.entries(apps), {
       keySelector: ([name]) => name
     }).reduce((acc, [name, app]) => {
