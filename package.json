@@ -7,7 +7,6 @@
     "formatter-write": "prettier --write \"./public/**/*.(json|yml)\"",
     "build": "rm -rf ./dist/ && mkdir -p dist && node ./scripts/build_one_click_apps.js && node ./scripts/build_one_click_apps_from_v4.js && node ./scripts/apps-to-frontend.js && npm run svelte:build && cp -r ./build/* ./dist/",
     "validate_apps": "node ./scripts/validate_apps.js",
-    "publish": "npm run build && ./scripts/publish-from-actions.sh",
     "svelte:dev": "vite dev",
     "svelte:build": "vite build"
   },
