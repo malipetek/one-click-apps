@@ -25,6 +25,9 @@ jobs:
       - name: Install dependencies with pnpm
         run: pnpm install
 
+      - name: Install dependencies with pnpm
+        run: pnpm build
+
       - name: Deploy to GitHub Pages
         uses: Cecilapp/GitHub-Pages-deploy@v3
         env:
