@@ -40,6 +40,7 @@ services:
         - RUN cd plugins/generic/citationStyleLanguage && composer install --no-dev --optimize-autoloader || true
         - RUN npm install && npm run build
         - RUN cp config.TEMPLATE.inc.php config.inc.php
+        - RUN sh -c 'KEY=$(openssl rand -hex 32) && sed -i "s|installed = Off|installed = On|g; s|base_url = \"https://pkp.sfu.ca/ojs\"|base_url = \"https://ufdjournal.malipetek.dev\"|g; s|app_key =|app_key = \"$KEY\"|g" config.inc.php'
         - RUN mkdir -p /var/www/files && chown -R www-data:www-data /var/www/html /var/www/files
         - ENV APACHE_DOCUMENT_ROOT=/var/www/html
         - RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
