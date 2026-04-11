@@ -43,6 +43,7 @@ services:
         - RUN npm install && npm run build
         - RUN cp config.TEMPLATE.inc.php config.inc.php
         - RUN sh -c 'KEY=$(openssl rand -hex 32) && sed -i "s|app_key =|app_key = \"$KEY\"|g" config.inc.php'
+        - RUN echo 'SetEnvIf X-Forwarded-Proto https HTTPS=on' > /etc/apache2/conf-available/ssl-env.conf && a2enconf ssl-env
         - RUN printf '#!/bin/sh\nif [ -n "$OJS_BASE_URL" ]; then\n  sed -i "s|base_url = \"https://pkp.sfu.ca/ojs\"|base_url = \"$OJS_BASE_URL\"|g" /var/www/html/config.inc.php\nfi\nif [ -n "$APACHE_SERVER_NAME" ]; then\n  echo "ServerName $APACHE_SERVER_NAME" >> /etc/apache2/apache2.conf\nfi\nexec apache2-foreground\n' > /entrypoint.sh && chmod +x /entrypoint.sh
         - RUN mkdir -p /var/www/files && chown -R www-data:www-data /var/www/html /var/www/files
         - ENV APACHE_DOCUMENT_ROOT=/var/www/html
@@ -77,8 +78,8 @@ caproverOneClickApp:
       validRegex: /.{1,}/
     - id: $$cap_ojs_base_url
       label: OJS Base URL
-      defaultValue: 'https://$$cap_appname.$$cap_root_domain'
-      description: The full URL where OJS will be accessible (e.g., https://journal.example.com). Must include https:// prefix.
+      defaultValue: ''
+      description: The full URL where OJS will be accessible (e.g., https://myjournal.example.com). Must include https:// prefix. You can find this in CapRover after enabling HTTPS.
       validRegex: /^https?:\/\/.+/
   instructions:
     start: >-
