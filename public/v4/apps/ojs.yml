@@ -21,6 +21,8 @@ services:
       OJS_DB_USER: $$cap_ojs_db_user
       OJS_DB_PASSWORD: $$cap_ojs_db_password
       OJS_DB_NAME: $$cap_ojs_db_name
+      OJS_BASE_URL: $$cap_ojs_base_url
+      APACHE_SERVER_NAME: localhost
     caproverExtra:
       containerHttpPort: 80
       dockerfileLines:
@@ -40,11 +42,13 @@ services:
         - RUN cd plugins/generic/citationStyleLanguage && composer install --no-dev --optimize-autoloader || true
         - RUN npm install && npm run build
         - RUN cp config.TEMPLATE.inc.php config.inc.php
-        - RUN sh -c 'KEY=$(openssl rand -hex 32) && sed -i "s|installed = Off|installed = On|g; s|base_url = \"https://pkp.sfu.ca/ojs\"|base_url = \"https://ufdjournal.malipetek.dev\"|g; s|app_key =|app_key = \"$KEY\"|g" config.inc.php'
+        - RUN sh -c 'KEY=$(openssl rand -hex 32) && sed -i "s|app_key =|app_key = \"$KEY\"|g" config.inc.php'
+        - RUN printf '#!/bin/sh\nif [ -n "$OJS_BASE_URL" ]; then\n  sed -i "s|base_url = \"https://pkp.sfu.ca/ojs\"|base_url = \"$OJS_BASE_URL\"|g" /var/www/html/config.inc.php\nfi\nif [ -n "$APACHE_SERVER_NAME" ]; then\n  echo "ServerName $APACHE_SERVER_NAME" >> /etc/apache2/apache2.conf\nfi\nexec apache2-foreground\n' > /entrypoint.sh && chmod +x /entrypoint.sh
         - RUN mkdir -p /var/www/files && chown -R www-data:www-data /var/www/html /var/www/files
         - ENV APACHE_DOCUMENT_ROOT=/var/www/html
         - RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
         - RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}/!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
+        - ENTRYPOINT ["/entrypoint.sh"]
     volumes:
       - $$cap_appname-files:/var/www/files
 
@@ -71,6 +75,11 @@ caproverOneClickApp:
       label: OJS Database Name
       defaultValue: 'ojs'
       validRegex: /.{1,}/
+    - id: $$cap_ojs_base_url
+      label: OJS Base URL
+      defaultValue: 'https://$$cap_appname.$$cap_root_domain'
+      description: The full URL where OJS will be accessible (e.g., https://journal.example.com). Must include https:// prefix.
+      validRegex: /^https?:\/\/.+/
   instructions:
     start: >-
       Open Journal Systems (OJS) is a journal management and publishing system developed by the Public Knowledge Project.
