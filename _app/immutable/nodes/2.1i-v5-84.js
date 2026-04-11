@@ -80,7 +80,7 @@ services:
         - FROM php:8.2-apache
         - RUN apt-get update && apt-get install -y git curl zip unzip libpng-dev libjpeg-dev libfreetype6-dev libonig-dev libsqlite3-dev libicu-dev libxml2-dev libzip-dev mariadb-client npm && rm -rf /var/lib/apt/lists/*
         - RUN docker-php-ext-configure gd --with-freetype --with-jpeg
-        - RUN docker-php-ext-install gd mysqli pdo pdo_mysql xml mbstring zip opcache intl
+        - RUN docker-php-ext-install gd mysqli pdo pdo_mysql xml mbstring zip opcache intl bcmath ftp
         - RUN a2enmod rewrite
         - WORKDIR /var/www/html
         - RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
