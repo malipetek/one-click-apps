@@ -78,8 +78,9 @@ services:
       containerHttpPort: 80
       dockerfileLines:
         - FROM php:8.2-apache
-        - RUN apt-get update && apt-get install -y git curl zip unzip libpng-dev libjpeg-dev libfreetype6-dev libxml2-dev mariadb-client && rm -rf /var/lib/apt/lists/*
-        - RUN docker-php-ext-configure gd --with-freetype --with-jpeg && docker-php-ext-install gd mysqli pdo pdo_mysql xml mbstring zip opcache intl
+        - RUN apt-get update && apt-get install -y git curl zip unzip libpng-dev libjpeg-dev libfreetype6-dev libonig-dev libsqlite3-dev libicu-dev mariadb-client && rm -rf /var/lib/apt/lists/*
+        - RUN docker-php-ext-configure gd --with-freetype --with-jpeg
+        - RUN docker-php-ext-install gd mysqli pdo pdo_mysql xml mbstring zip opcache intl
         - RUN a2enmod rewrite
         - WORKDIR /var/www/html
         - RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
@@ -97,7 +98,7 @@ caproverOneClickApp:
   variables:
     - id: $$cap_ojs_version
       label: OJS Version
-      defaultValue: '3_4_0-7'
+      defaultValue: '3_5_0-3'
       description: OJS version branch from GitHub (e.g., 3_4_0-7, stable-3_4_0, main). This builds from source for ARM64 compatibility.
       validRegex: /^([^\\s^\\/])+$/
     - id: $$cap_ojs_db_root_password
