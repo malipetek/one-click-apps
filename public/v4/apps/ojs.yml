@@ -25,7 +25,7 @@ services:
       containerHttpPort: 80
       dockerfileLines:
         - FROM php:8.2-apache
-        - RUN apt-get update && apt-get install -y git curl zip unzip libpng-dev libjpeg-dev libfreetype6-dev libonig-dev libsqlite3-dev libicu-dev libxml2-dev libzip-dev mariadb-client npm && rm -rf /var/lib/apt/lists/*
+        - RUN apt-get update && apt-get install -y git curl zip unzip libpng-dev libjpeg-dev libfreetype6-dev libonig-dev libsqlite3-dev libicu-dev libxml2-dev libzip-dev mariadb-client && rm -rf /var/lib/apt/lists/*
         - RUN docker-php-ext-configure gd --with-freetype --with-jpeg
         - RUN docker-php-ext-install gd mysqli pdo pdo_mysql xml mbstring zip opcache intl bcmath ftp
         - RUN a2enmod rewrite
@@ -37,7 +37,6 @@ services:
         - RUN cd lib/pkp && composer install --no-dev --optimize-autoloader
         - RUN cd plugins/paymethod/paypal && composer install --no-dev --optimize-autoloader || true
         - RUN cd plugins/generic/citationStyleLanguage && composer install --no-dev --optimize-autoloader || true
-        - RUN cd /var/www/html && npm install && npm run build || true
         - RUN cp config.TEMPLATE.inc.php config.inc.php
         - RUN mkdir -p /var/www/files && chown -R www-data:www-data /var/www/html /var/www/files
         - ENV APACHE_DOCUMENT_ROOT=/var/www/html
@@ -45,7 +44,6 @@ services:
         - RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}/!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
     volumes:
       - $$cap_appname-files:/var/www/files
-      - $$cap_appname-public:/var/www/html/public
 
 caproverOneClickApp:
   variables:
