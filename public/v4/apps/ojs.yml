@@ -13,7 +13,6 @@ services:
       notExposeAsWebApp: 'true'
 
   $$cap_appname:
-    image: pkpofficial/ojs:$$cap_ojs_version
     depends_on:
       - $$cap_appname-db
     environment:
@@ -24,6 +23,19 @@ services:
       OJS_DB_NAME: $$cap_ojs_db_name
     caproverExtra:
       containerHttpPort: 80
+      dockerfileLines:
+        - FROM php:8.2-apache
+        - RUN apt-get update && apt-get install -y git curl zip unzip libpng-dev libjpeg-dev libfreetype6-dev libxml2-dev mariadb-client && rm -rf /var/lib/apt/lists/*
+        - RUN docker-php-ext-configure gd --with-freetype --with-jpeg && docker-php-ext-install gd mysqli pdo pdo_mysql xml mbstring zip opcache intl
+        - RUN a2enmod rewrite
+        - WORKDIR /var/www/html
+        - RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+        - RUN git clone --depth 1 --single-branch --branch $$cap_ojs_version https://github.com/pkp/ojs.git .
+        - RUN composer install --no-dev --optimize-autoloader
+        - RUN chown -R www-data:www-data /var/www/html
+        - ENV APACHE_DOCUMENT_ROOT=/var/www/html
+        - RUN sed -ri -e 's!/var/www/html!${APACHE_DOCUMENT_ROOT}!g' /etc/apache2/sites-available/*.conf
+        - RUN sed -ri -e 's!/var/www/!${APACHE_DOCUMENT_ROOT}/!g' /etc/apache2/apache2.conf /etc/apache2/conf-available/*.conf
     volumes:
       - $$cap_appname-files:/var/www/files
       - $$cap_appname-public:/var/www/html/public
@@ -33,7 +45,7 @@ caproverOneClickApp:
     - id: $$cap_ojs_version
       label: OJS Version
       defaultValue: '3_4_0-7'
-      description: Check out their Docker page for the valid tags https://hub.docker.com/r/pkpofficial/ojs/tags
+      description: OJS version branch from GitHub (e.g., 3_4_0-7, stable-3_4_0, main). This builds from source for ARM64 compatibility.
       validRegex: /^([^\s^\/])+$/
     - id: $$cap_ojs_db_root_password
       label: MySQL Root Password
