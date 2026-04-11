@@ -32,11 +32,12 @@ services:
         - WORKDIR /var/www/html
         - RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
         - RUN git clone --depth 1 --single-branch --branch $$cap_ojs_version https://github.com/pkp/ojs.git .
+        - RUN git config --global --add safe.directory /var/www/html
         - RUN git submodule update --init --recursive
         - RUN cd lib/pkp && composer install --no-dev --optimize-autoloader
         - RUN cd plugins/paymethod/paypal && composer install --no-dev --optimize-autoloader || true
         - RUN cd plugins/generic/citationStyleLanguage && composer install --no-dev --optimize-autoloader || true
-        - RUN npm install && npm run build || true
+        - RUN cd /var/www/html && npm install && npm run build || true
         - RUN cp config.TEMPLATE.inc.php config.inc.php
         - RUN mkdir -p /var/www/files && chown -R www-data:www-data /var/www/html /var/www/files
         - ENV APACHE_DOCUMENT_ROOT=/var/www/html
