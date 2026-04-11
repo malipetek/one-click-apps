@@ -44,6 +44,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Format code
-        run: pnpm run formatter
+        run: pnpm run formatter-write
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
